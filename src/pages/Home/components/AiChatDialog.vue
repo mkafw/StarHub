@@ -1,108 +1,117 @@
 <template>
   <div class="ai-chat-wrapper">
     <!-- Floating Action Button -->
-    <el-tooltip :content="t('chat.title')" placement="left">
+    <el-tooltip v-if="!panelVisible" :content="t('chat.title')" placement="left">
       <el-button
         class="chat-fab"
         type="primary"
         :icon="ChatDotSquare"
         circle
         size="large"
-        @click="openDialog"
+        @click="openPanel"
       />
     </el-tooltip>
 
-    <!-- Chat Dialog -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="t('chat.title')"
-      width="480px"
-      :close-on-click-modal="false"
-      destroy-on-close
-      @closed="handleClosed"
-    >
-      <!-- AI Not Configured -->
-      <div v-if="!aiConfigured" class="no-config">
-        <el-icon :size="48" color="var(--text-tertiary)"><WarningFilled /></el-icon>
-        <p>{{ t('chat.needAIConfig') }}</p>
-        <el-button type="primary" @click="goToSettings">
-          {{ t('chat.goToSettings') }}
-        </el-button>
-      </div>
+    <!-- Overlay backdrop -->
+    <Transition name="panel-fade">
+      <div v-if="panelVisible" class="chat-backdrop" @click="closePanel" />
+    </Transition>
 
-      <!-- Chat Interface -->
-      <div v-else class="chat-interface">
-        <div class="message-list" ref="messageListRef">
-          <div v-if="messages.length === 0" class="greeting">
-            {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.multiGreeting') }}
+    <!-- Slide-out Panel -->
+    <Transition name="panel-slide">
+      <div v-if="panelVisible" class="chat-panel">
+        <div class="panel-header">
+          <span class="panel-title">{{ t('chat.title') }}</span>
+          <el-button text circle @click="closePanel">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+
+        <div class="panel-body">
+          <!-- AI Not Configured -->
+          <div v-if="!aiConfigured" class="no-config">
+            <el-icon :size="48" color="var(--text-tertiary)"><WarningFilled /></el-icon>
+            <p>{{ t('chat.needAIConfig') }}</p>
+            <el-button type="primary" @click="goToSettings">
+              {{ t('chat.goToSettings') }}
+            </el-button>
           </div>
 
-          <div
-            v-for="(msg, idx) in messages"
-            :key="idx"
-            :class="['message-bubble', msg.role]"
-          >
-            <div class="bubble-avatar">
-              <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
-              <el-icon v-else><Cpu /></el-icon>
-            </div>
-            <div class="bubble-content">
-              <div class="bubble-text">{{ msg.content }}</div>
+          <!-- Chat Interface -->
+          <div v-else class="chat-interface">
+            <div class="message-list" ref="messageListRef">
+              <div v-if="messages.length === 0" class="greeting">
+                {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.multiGreeting') }}
+              </div>
+
               <div
-                v-if="msg.role === 'assistant' && msg.error"
-                class="bubble-error"
+                v-for="(msg, idx) in messages"
+                :key="idx"
+                :class="['message-bubble', msg.role]"
               >
-                <el-button size="small" text type="danger" @click="retryMessage(idx)">
-                  {{ t('chat.retry') }}
+                <div class="bubble-avatar">
+                  <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
+                  <el-icon v-else><Cpu /></el-icon>
+                </div>
+                <div class="bubble-content">
+                  <div class="bubble-text">{{ msg.content }}</div>
+                  <div
+                    v-if="msg.role === 'assistant' && msg.error"
+                    class="bubble-error"
+                  >
+                    <el-button size="small" text type="danger" @click="retryMessage(idx)">
+                      {{ t('chat.retry') }}
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Streaming message -->
+              <div v-if="isStreaming" class="message-bubble assistant">
+                <div class="bubble-avatar">
+                  <el-icon><Cpu /></el-icon>
+                </div>
+                <div class="bubble-content">
+                  <div class="bubble-text">
+                    {{ streamBuffer }}<span class="cursor-blink">|</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-area">
+              <el-input
+                v-model="inputText"
+                :placeholder="t('chat.inputPlaceholder')"
+                type="textarea"
+                :rows="2"
+                :disabled="isStreaming"
+                resize="none"
+                @keydown.enter.exact.prevent="sendMessage"
+              />
+              <div class="input-actions">
+                <el-button
+                  v-if="!isStreaming"
+                  type="primary"
+                  :disabled="!inputText.trim()"
+                  @click="sendMessage"
+                >
+                  {{ t('chat.send') }}
+                </el-button>
+                <el-button
+                  v-else
+                  type="danger"
+                  plain
+                  @click="stopGeneration"
+                >
+                  {{ t('chat.stop') }}
                 </el-button>
               </div>
             </div>
           </div>
-
-          <!-- Streaming message -->
-          <div v-if="isStreaming" class="message-bubble assistant">
-            <div class="bubble-avatar">
-              <el-icon><Cpu /></el-icon>
-            </div>
-            <div class="bubble-content">
-              <div class="bubble-text">
-                {{ streamBuffer }}<span class="cursor-blink">|</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="input-area">
-          <el-input
-            v-model="inputText"
-            :placeholder="t('chat.inputPlaceholder')"
-            type="textarea"
-            :rows="2"
-            :disabled="isStreaming"
-            resize="none"
-            @keydown.enter.exact.prevent="sendMessage"
-          />
-          <div class="input-actions">
-            <el-button
-              v-if="!isStreaming"
-              type="primary"
-              :disabled="!inputText.trim()"
-              @click="sendMessage"
-            >
-              {{ t('chat.send') }}
-            </el-button>
-            <el-button
-              v-else
-              type="danger"
-              plain
-              @click="stopGeneration"
-            >
-              {{ t('chat.stop') }}
-            </el-button>
-          </div>
         </div>
       </div>
-    </el-dialog>
+    </Transition>
   </div>
 </template>
 
@@ -123,7 +132,8 @@ import {
   ChatDotSquare,
   WarningFilled,
   UserFilled,
-  Cpu
+  Cpu,
+  Close
 } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
@@ -147,7 +157,7 @@ interface DisplayMessage {
   error?: boolean
 }
 
-const dialogVisible = ref(false)
+const panelVisible = ref(false)
 const messages = ref<DisplayMessage[]>([])
 const inputText = ref('')
 const isStreaming = ref(false)
@@ -157,17 +167,18 @@ const messageListRef = ref<HTMLElement | null>(null)
 
 const aiConfigured = computed(() => isAIConfigured())
 
-const openDialog = () => {
-  dialogVisible.value = true
+const openPanel = () => {
+  panelVisible.value = true
   emit('update:modelValue', true)
 }
 
-const handleClosed = () => {
+const closePanel = () => {
+  panelVisible.value = false
   emit('update:modelValue', false)
 }
 
 watch(() => props.modelValue, (val) => {
-  dialogVisible.value = val
+  panelVisible.value = val
 })
 
 function buildSystemPrompt(): string {
@@ -240,7 +251,6 @@ function stopGeneration() {
 }
 
 function retryMessage(idx: number) {
-  // Remove the error message and the user message before it, then resend
   if (idx > 0) {
     const prevMsg = messages.value[idx - 1]
     if (prevMsg.role === 'user') {
@@ -252,8 +262,7 @@ function retryMessage(idx: number) {
 }
 
 function goToSettings() {
-  dialogVisible.value = false
-  emit('update:modelValue', false)
+  closePanel()
   router.push('/settings')
 }
 
@@ -264,7 +273,6 @@ function scrollToBottom() {
   }
 }
 
-// Watch streamBuffer changes to auto-scroll
 watch(streamBuffer, () => {
   nextTick(() => scrollToBottom())
 })
@@ -279,7 +287,7 @@ onBeforeUnmount(() => {
   position: absolute;
   bottom: 16px;
   right: 16px;
-  z-index: 10;
+  z-index: 100;
 }
 
 .chat-fab {
@@ -294,14 +302,69 @@ onBeforeUnmount(() => {
   }
 }
 
+// Backdrop
+.chat-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+// Slide-out panel
+.chat-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  z-index: 1001;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+
+  [data-theme='dark'] & {
+    background: #1c2333;
+    border-color: rgba(96, 165, 250, 0.2);
+  }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+
+  [data-theme='dark'] & {
+    border-color: rgba(96, 165, 250, 0.2);
+  }
+}
+
+.panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .no-config {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 32px 16px;
+  padding: 48px 16px;
   text-align: center;
+  flex: 1;
 
   p {
     color: var(--text-secondary);
@@ -312,7 +375,7 @@ onBeforeUnmount(() => {
 .chat-interface {
   display: flex;
   flex-direction: column;
-  height: 420px;
+  height: 100%;
 }
 
 .message-list {
@@ -421,8 +484,8 @@ onBeforeUnmount(() => {
 
 .input-area {
   border-top: 1px solid var(--border);
-  padding: 12px 0 0;
-  margin-top: 8px;
+  padding: 12px;
+  flex-shrink: 0;
 
   [data-theme='dark'] & {
     border-color: rgba(96, 165, 250, 0.2);
@@ -435,22 +498,29 @@ onBeforeUnmount(() => {
   margin-top: 8px;
 }
 
-// Dark mode overrides for dialog
-:deep(.el-dialog) {
-  [data-theme='dark'] & {
-    background: #1c2333;
-  }
+// Panel slide transition
+.panel-slide-enter-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-slide-enter-from {
+  transform: translateX(100%);
+}
+.panel-slide-leave-to {
+  transform: translateX(100%);
 }
 
-:deep(.el-dialog__header) {
-  [data-theme='dark'] & {
-    background: #1c2333;
-  }
+// Backdrop fade transition
+.panel-fade-enter-active {
+  transition: opacity 0.3s ease;
 }
-
-:deep(.el-dialog__body) {
-  [data-theme='dark'] & {
-    background: #1c2333;
-  }
+.panel-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.panel-fade-enter-from,
+.panel-fade-leave-to {
+  opacity: 0;
 }
 </style>
