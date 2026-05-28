@@ -222,6 +222,19 @@ export default {
     costEffective: 'Cost-effective',
     and: 'and'
   },
+  chat: {
+    title: 'AI Chat',
+    inputPlaceholder: 'Ask a question about the repository...',
+    send: 'Send',
+    stop: 'Stop',
+    singleGreeting: 'Hello! I can answer questions about this repository. For example: "What does this project do?", "How to install?"',
+    multiGreeting: 'Hello! I can help you explore your starred repositories. For example: "Which repos use Python?", "What are my top 10 most popular repos?"',
+    needAIConfig: 'Please configure AI service in Settings first',
+    goToSettings: 'Go to Settings',
+    error: 'Response failed, please retry',
+    retry: 'Retry',
+    emptyMessage: 'Please enter a question'
+  },
   error: {
     network: 'Network Error',
     unauthorized: 'Unauthorized, please login again',

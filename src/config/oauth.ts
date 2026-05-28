@@ -15,6 +15,6 @@
  */
 
 export const GITHUB_OAUTH_CONFIG = {
-  CLIENT_ID: 'Ov23liIm4iNdpnHwGLfp' // 在这里填入你的 GitHub OAuth Client ID
+  CLIENT_ID: 'Ov23liKH9x1DCueWwcud' // 在这里填入你的 GitHub OAuth Client ID
 }
 

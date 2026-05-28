@@ -222,6 +222,19 @@ export default {
     costEffective: '性价比高',
     and: '并'
   },
+  chat: {
+    title: 'AI 问答',
+    inputPlaceholder: '输入关于仓库的问题...',
+    send: '发送',
+    stop: '停止',
+    singleGreeting: '你好！我可以回答关于此仓库的问题。例如："这个项目是做什么的？"、"如何安装？"',
+    multiGreeting: '你好！我可以帮你了解所有已收藏的仓库。例如："我有哪些 Python 项目？"、"最火的 10 个仓库是什么？"',
+    needAIConfig: '请先在设置页面配置 AI 服务',
+    goToSettings: '去配置',
+    error: '回答失败，请重试',
+    retry: '重试',
+    emptyMessage: '请输入问题'
+  },
   error: {
     network: '网络错误',
     unauthorized: '未授权，请重新登录',

@@ -27,6 +27,12 @@
             />
           </div>
           <EmptyState v-else />
+
+          <AiChatDialog
+            v-model="showAiChat"
+            mode="multi"
+            :all-repos="repoStore.repos"
+          />
         </div>
       </template>
     </HomeLayout>
@@ -42,12 +48,14 @@ import SideMenu from './components/SideMenu.vue'
 import RepoList from './components/RepoList.vue'
 import DetailView from './components/DetailView.vue'
 import EmptyState from './components/EmptyState.vue'
+import AiChatDialog from './components/AiChatDialog.vue'
 import type { Repository } from '@/types'
 
 const repoStore = useRepoStore()
 const tagStore = useTagStore()
 
 const selectedRepo = ref<Repository | null>(null)
+const showAiChat = ref(false)
 
 const filteredRepos = computed(() => repoStore.filteredRepos)
 const loading = computed(() => repoStore.isFetching)

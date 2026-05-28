@@ -399,7 +399,7 @@ onMounted(() => {
 const login = async (code: string) => {
   try {
     loading.value = true
-    const res = await authApi.getToken(code)
+    const res = await authApi.getToken(code, location.origin + '#/login')
     const { token, token_type, access_token } = res.data
     const ghToken = `${token_type} ${access_token}`
     

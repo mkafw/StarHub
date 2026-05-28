@@ -665,7 +665,7 @@ const handleAutoClassify = async (reclassifyAll = false) => {
         duration: 0
       })
       
-      const batchCategoryMap = await classifyRepositories(
+      await classifyRepositories(
         batchWithReadme as any,
         // 进度回调
         (current, total) => {

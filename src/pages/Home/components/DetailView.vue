@@ -89,6 +89,13 @@
         <el-button type="primary" @click="handleAddTag">Add</el-button>
       </template>
     </el-dialog>
+
+    <AiChatDialog
+      v-model="showAiChat"
+      mode="single"
+      :repo="repo"
+      :readme-content="rawReadmeContent"
+    />
   </div>
 </template>
 
@@ -113,6 +120,7 @@ import 'github-markdown-css'
 
 import DOMPurify from 'dompurify'
 import type { Repository, Tag } from '@/types'
+import AiChatDialog from './AiChatDialog.vue'
 import {
   Close,
   Document,
@@ -150,7 +158,9 @@ defineEmits<{
 const tagStore = useTagStore()
 const repoTags = ref<Tag[]>([])
 const readme = ref('')
+const rawReadmeContent = ref('')
 const showTagDialog = ref(false)
+const showAiChat = ref(false)
 const selectedTagId = ref('')
 
 const availableTags = computed(() => {
@@ -164,7 +174,10 @@ const loadReadme = async () => {
     const defaultBranch = props.repo.default_branch || 'main'
     const response = await githubApi.getReadme(owner, repo)
     let rawReadme = response.data
-    
+
+    // Save raw content for AI chat context
+    rawReadmeContent.value = rawReadme
+
     // 将相对路径的图片和链接转换为 GitHub 绝对路径
     const rawBaseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/`
     const repoBaseUrl = `https://github.com/${owner}/${repo}/blob/${defaultBranch}/`
