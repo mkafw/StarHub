@@ -3,6 +3,12 @@ import qs from 'query-string'
 import type { AxiosResponse } from 'axios'
 import type { User, Repository } from '@/types'
 
+export interface SearchReposResult {
+  total_count: number
+  incomplete_results: boolean
+  items: Repository[]
+}
+
 export const githubApi = {
   // Get authenticated user
   getLoginUser(): Promise<AxiosResponse<User>> {
@@ -47,6 +53,17 @@ export const githubApi = {
   // Get repository details
   getRepository(owner: string, repo: string): Promise<AxiosResponse<Repository>> {
     return http.get(`/repos/${owner}/${repo}`)
+  },
+
+  // Search GitHub repositories (for discover feature)
+  searchRepos(
+    query: string,
+    perPage: number = 20,
+    page: number = 1
+  ): Promise<AxiosResponse<SearchReposResult>> {
+    return http.get(
+      `/search/repositories?${qs.stringify({ q: query, per_page: perPage, page, sort: 'stars', order: 'desc' })}`
+    )
   }
 }
 

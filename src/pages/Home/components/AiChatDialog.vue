@@ -41,7 +41,7 @@
           <div v-else class="chat-interface">
             <div class="message-list" ref="messageListRef">
               <div v-if="messages.length === 0" class="greeting">
-                {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.multiGreeting') }}
+                {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.smartGreeting') }}
               </div>
 
               <div
@@ -54,11 +54,24 @@
                   <el-icon v-else><Cpu /></el-icon>
                 </div>
                 <div class="bubble-content">
-                  <div class="bubble-text">{{ msg.content }}</div>
-                  <div
-                    v-if="msg.role === 'assistant' && msg.error"
-                    class="bubble-error"
-                  >
+                  <div class="bubble-text">{{ msg.displayContent }}</div>
+
+                  <!-- Action chips for assistant messages -->
+                  <div v-if="msg.role === 'assistant' && msg.actions?.length" class="action-chips">
+                    <el-button
+                      v-for="(action, ai) in msg.actions"
+                      :key="ai"
+                      size="small"
+                      :type="action.type === 'discover' ? 'success' : 'primary'"
+                      plain
+                      @click="executeAction(action)"
+                    >
+                      {{ actionLabel(action) }}
+                    </el-button>
+                  </div>
+
+                  <!-- Retry button on error -->
+                  <div v-if="msg.role === 'assistant' && msg.error" class="bubble-error">
                     <el-button size="small" text type="danger" @click="retryMessage(idx)">
                       {{ t('chat.retry') }}
                     </el-button>
@@ -77,6 +90,11 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Mode hint -->
+            <div class="mode-hint" v-if="mode === 'multi'">
+              <el-tag size="small" type="info" effect="plain">{{ t('chat.smartModeHint') }}</el-tag>
             </div>
 
             <div class="input-area">
@@ -123,9 +141,11 @@ import { isAIConfigured } from '@/config/ai'
 import {
   getChatConfig,
   buildSingleRepoSysPrompt,
-  buildMultiRepoSysPrompt,
+  buildSmartFilterSysPrompt,
+  parseSmartActions,
   streamChat,
-  type ChatMessage
+  type ChatMessage,
+  type SmartAction
 } from '@/services/chat'
 import type { Repository } from '@/types'
 import {
@@ -149,11 +169,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  'smartFilter': [action: SmartAction]
+  'discover': [query: string]
 }>()
 
 interface DisplayMessage {
   role: 'user' | 'assistant'
-  content: string
+  content: string       // raw content (with markers)
+  displayContent: string // cleaned content (markers removed)
+  actions?: SmartAction[]
   error?: boolean
 }
 
@@ -186,9 +210,36 @@ function buildSystemPrompt(): string {
     return buildSingleRepoSysPrompt(props.repo, props.readmeContent)
   }
   if (props.mode === 'multi' && props.allRepos?.length) {
-    return buildMultiRepoSysPrompt(props.allRepos)
+    return buildSmartFilterSysPrompt(props.allRepos)
   }
   return 'You are a helpful assistant.'
+}
+
+function cleanActionMarkers(text: string): string {
+  return text
+    .replace(/\[\[FILTER:[^\]]+\]\]/g, '')
+    .replace(/\[\[TAG:[^\]]+\]\]/g, '')
+    .replace(/\[\[DISCOVER:[^\]]+\]\]/g, '')
+    .trim()
+}
+
+function actionLabel(action: SmartAction): string {
+  switch (action.type) {
+    case 'filter':
+      return `🔍 ${t('chat.applyFilter')}${action.query ? `: ${action.query}` : ''}${action.tag ? `: ${action.tag}` : ''}${action.language ? `: ${action.language}` : ''}`
+    case 'tag':
+      return `🏷️ ${t('chat.applyTag')}: ${action.tagName}`
+    case 'discover':
+      return `🔎 ${t('chat.discover')}: ${action.query?.slice(0, 30)}...`
+  }
+}
+
+function executeAction(action: SmartAction) {
+  if (action.type === 'discover') {
+    emit('discover', action.query || '')
+  } else {
+    emit('smartFilter', action)
+  }
 }
 
 async function sendMessage() {
@@ -197,7 +248,7 @@ async function sendMessage() {
 
   const config = getChatConfig()
 
-  messages.value.push({ role: 'user', content: text })
+  messages.value.push({ role: 'user', content: text, displayContent: text })
   inputText.value = ''
 
   const systemPrompt = buildSystemPrompt()
@@ -224,18 +275,30 @@ async function sendMessage() {
     )
 
     if (fullText) {
-      messages.value.push({ role: 'assistant', content: fullText })
+      // Parse actions from the response
+      const actions = parseSmartActions(fullText)
+      const displayContent = cleanActionMarkers(fullText)
+
+      messages.value.push({
+        role: 'assistant',
+        content: fullText,
+        displayContent,
+        actions: actions.length > 0 ? actions : undefined
+      })
     }
     streamBuffer.value = ''
   } catch (err: any) {
     streamBuffer.value = ''
     if (err?.name === 'AbortError') return
 
+    const errorMsg = err?.message === 'rate_limit'
+      ? 'API rate limit exceeded. Please wait a moment and try again.'
+      : t('chat.error')
+
     messages.value.push({
       role: 'assistant',
-      content: err?.message === 'rate_limit'
-        ? 'API rate limit exceeded. Please wait a moment and try again.'
-        : t('chat.error'),
+      content: errorMsg,
+      displayContent: errorMsg,
       error: true
     })
   } finally {
@@ -316,7 +379,7 @@ onBeforeUnmount(() => {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 400px;
+  width: 420px;
   z-index: 1001;
   background: var(--bg-primary);
   border-left: 1px solid var(--border);
@@ -469,6 +532,14 @@ onBeforeUnmount(() => {
   word-break: break-word;
 }
 
+.action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: 4px;
+}
+
 .bubble-error {
   margin-top: 4px;
 }
@@ -480,6 +551,12 @@ onBeforeUnmount(() => {
 
 @keyframes blink {
   50% { opacity: 0; }
+}
+
+.mode-hint {
+  padding: 4px 12px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .input-area {
