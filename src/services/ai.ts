@@ -442,7 +442,10 @@ function getDelayTime(provider: string): number {
     case 'qwen':
     case 'zhipu':
     case 'deepseek':
+    case 'baishan':
       return 2 // 国内 API 通常限制更宽松
+    case 'mistral':
+      return 3
     default:
       return 3
   }

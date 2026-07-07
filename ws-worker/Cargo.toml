@@ -1,0 +1,15 @@
+[package]
+name = "starhub-ws"
+version = "0.1.0"
+edition = "2021"
+description = "StarHub WebSocket Worker - real-time progress and notifications"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = { version = "0.8", features = ["http", "axum"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures = "0.3"
+tokio = { version = "1", features = ["sync"] }

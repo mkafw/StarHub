@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { githubApi } from '@/api/github'
 import { getPageFromLinkStr } from '@/utils'
 import { useTagStore } from './tag'
+import { wsClient } from '@/services/websocket'
 import Dexie from 'dexie'
 
 export const useRepoStore = defineStore('repo', {
@@ -22,6 +23,8 @@ export const useRepoStore = defineStore('repo', {
     searchQuery: '',
     selectedLanguage: null as string | null,
     selectedTag: null as string | null,
+    // View mode
+    viewMode: (localStorage.getItem('view_mode') as 'card' | 'list') || 'card',
     // Pagination
     currentPage: 1,
     pageSize: 50
@@ -120,6 +123,9 @@ export const useRepoStore = defineStore('repo', {
       this.$state.isSyncing = true
       this.$state.isFetching = true
       this.$state.syncProgress = { current: 0, total: 0, count: 0 }
+
+      // Notify WebSocket about sync start
+      try { wsClient.send('sync:start', { total: 0 }) } catch {}
       
       // Create a unique sync ID to track this sync session
       const syncId = Date.now()
@@ -337,6 +343,7 @@ export const useRepoStore = defineStore('repo', {
             // Update repos periodically (not every batch)
             updateReposFromMap()
             this.$state.syncProgress.current = page - 1
+            try { wsClient.send('sync:progress', { current: page - 1, total: pageCount }) } catch {}
           } catch (error) {
             console.error('Error fetching page batch:', error)
             // Continue with what we have
@@ -347,10 +354,11 @@ export const useRepoStore = defineStore('repo', {
         // Final update after all pages are fetched
         // Force final update
         updateReposFromMap(true)
-        
+
         // Mark sync as complete
         this.$state.isSyncing = false
         this.$state.currentSyncId = 0
+        try { wsClient.send('sync:done', { count: allReposMap.size }) } catch {}
 
         // Clean up tags for non-existent repos (will be called from component to avoid circular dependency)
       } catch (error: any) {
@@ -434,6 +442,11 @@ export const useRepoStore = defineStore('repo', {
     setPageSize(size: number) {
       this.$state.pageSize = size
       this.$state.currentPage = 1 // Reset to first page
+    },
+
+    setViewMode(mode: 'card' | 'list') {
+      this.$state.viewMode = mode
+      localStorage.setItem('view_mode', mode)
     },
 
     async clearAndReload() {

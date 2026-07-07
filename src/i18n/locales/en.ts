@@ -23,7 +23,8 @@ export default {
     pageSize: 'Per page',
     actions: 'Actions',
     and: 'and',
-    or: 'or'
+    or: 'or',
+    view: 'View'
   },
   login: {
     title: 'Welcome to StarHub',
@@ -78,7 +79,17 @@ export default {
     addTag: 'Edit Categories',
     removeTag: 'Remove Category',
     noDescription: 'No description',
-    noReadme: 'No README'
+    noReadme: 'No README',
+    star: 'Star',
+    unstar: 'Unstar',
+    starred: 'Starred',
+    starredSuccess: 'Starred successfully',
+    unstarredSuccess: 'Unstarred successfully',
+    watch: 'Watch',
+    unwatch: 'Unwatch',
+    watching: 'Watching',
+    watchSuccess: 'Watching successfully',
+    unwatchSuccess: 'Unwatched successfully'
   },
   tag: {
     create: 'Create Category',
@@ -175,6 +186,9 @@ export default {
     emptyForDefault: 'Leave empty to use default address',
     emptyForDefaultModel: 'Leave empty to use default model',
     testConnection: 'Test Connection',
+    syncToCloud: 'Cloud Sync (D1)',
+    syncCloudSuccess: 'Sync to cloud successful!',
+    syncCloudFailed: 'Sync to cloud failed',
     dataBackup: 'Data Backup and Recovery',
     dataBackupDesc: 'Exporting data will include all repository information, categories, and associations. Importing data will overwrite all current data.',
     exportData: 'Export Data',
@@ -207,6 +221,10 @@ export default {
     qwenGuide: 'Tongyi Qianwen (Qwen)',
     zhipuGuide: 'Zhipu AI (GLM)',
     deepseekGuide: 'DeepSeek',
+    mistralGuide: 'Mistral AI',
+    baishanGuide: 'Baishan AI (ai.baishan.com)',
+    enterApiAddress: 'Enter the API address provided by the platform',
+    consultProvider: 'Please consult the platform for the latest API address and model name',
     visitLink: 'Visit',
     loginAndCreate: 'After logging in',
     newAPIKey: 'create a new API Key',
@@ -238,7 +256,10 @@ export default {
     goToSettings: 'Go to Settings',
     error: 'Response failed, please retry',
     retry: 'Retry',
-    emptyMessage: 'Please enter a question'
+    emptyMessage: 'Please enter a question',
+    focusedRepo: 'Located in list: {name}',
+    taggedSuccess: 'Successfully added category {tag} to {repo}',
+    taggedFailed: 'Failed to add category'
   },
   discover: {
     title: 'Discover Projects',

@@ -75,6 +75,8 @@
               <el-option :label="t('settings.qwenGuide')" value="qwen" />
               <el-option :label="t('settings.zhipuGuide')" value="zhipu" />
               <el-option :label="t('settings.deepseekGuide')" value="deepseek" />
+              <el-option :label="t('settings.mistralGuide')" value="mistral" />
+              <el-option :label="t('settings.baishanGuide')" value="baishan" />
             </el-select>
           </el-form-item>
 
@@ -159,6 +161,10 @@
             <el-button @click="handleImport" :loading="importing" size="default">
               <el-icon><Upload /></el-icon>
               {{ t('settings.importData') }}
+            </el-button>
+            <el-button type="success" @click="handleCloudSync" :loading="tagStore.cloudLoading" size="default">
+              <el-icon><Cloudy /></el-icon>
+              {{ t('settings.syncToCloud') }}
             </el-button>
             <el-button type="danger" @click="handleClearAll" plain size="default">
               <el-icon><Delete /></el-icon>
@@ -257,6 +263,24 @@
                 <li>{{ t('settings.recommendedModel') }}: deepseek-chat（{{ t('settings.costEffective') }}）</li>
               </ol>
             </el-collapse-item>
+
+            <el-collapse-item :title="t('settings.mistralGuide')" name="mistral">
+              <ol>
+                <li>{{ t('settings.visitLink') }} <a href="https://console.mistral.ai/api-keys/" target="_blank">Mistral AI Console</a></li>
+                <li>{{ t('settings.loginAndCreate') }} API Key</li>
+                <li>{{ t('settings.copyKey') }}</li>
+                <li>{{ t('settings.recommendedModel') }}: mistral-small-latest</li>
+              </ol>
+            </el-collapse-item>
+
+            <el-collapse-item :title="t('settings.baishanGuide')" name="baishan">
+              <ol>
+                <li>{{ t('settings.visitLink') }} <a href="https://ai.baishan.com/" target="_blank">百舸 AI 平台</a></li>
+                <li>{{ t('settings.loginAndCreate') }} API Key</li>
+                <li>{{ t('settings.copyKey') }} {{ t('common.and') }} {{ t('settings.pasteAbove') }}</li>
+                <li>{{ t('settings.enterApiAddress') }}（{{ t('settings.consultProvider') }}）</li>
+              </ol>
+            </el-collapse-item>
           </el-collapse>
         </div>
       </el-card>
@@ -316,7 +340,7 @@ import { ref, onMounted, onActivated, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Download, Upload, Delete, View } from '@element-plus/icons-vue'
+import { Plus, Download, Upload, Delete, View, Cloudy } from '@element-plus/icons-vue'
 import { getAIConfig, saveAIConfig, DEFAULT_MODELS, DEFAULT_BASE_URLS, type AIConfig } from '@/config/ai'
 import {
   getCategoryPresets,
@@ -733,6 +757,15 @@ const handleTest = async () => {
     ElMessage.error(`连接失败: ${error.message}`)
   } finally {
     testing.value = false
+  }
+}
+
+const handleCloudSync = async () => {
+  try {
+    await tagStore.pushToCloud()
+    ElMessage.success(t('settings.syncCloudSuccess'))
+  } catch (error) {
+    ElMessage.error(t('settings.syncCloudFailed'))
   }
 }
 

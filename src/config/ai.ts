@@ -1,6 +1,6 @@
 // AI 配置
 export interface AIConfig {
-  provider: 'openai' | 'claude' | 'qwen' | 'zhipu' | 'deepseek'
+  provider: 'openai' | 'claude' | 'qwen' | 'zhipu' | 'deepseek' | 'gemini' | 'mistral' | 'baishan'
   apiKey: string
   baseURL?: string
   model?: string
@@ -22,7 +22,10 @@ export const DEFAULT_MODELS = {
   claude: 'claude-3-5-sonnet-20241022',
   qwen: 'qwen-plus',
   zhipu: 'glm-4-flash',
-  deepseek: 'deepseek-chat'
+  deepseek: 'deepseek-chat',
+  gemini: 'gemini-2.0-flash',
+  mistral: 'mistral-small-latest',
+  baishan: 'baishan-model'
 }
 
 // 各平台默认 API 地址
@@ -31,7 +34,10 @@ export const DEFAULT_BASE_URLS = {
   claude: 'https://api.anthropic.com/v1',
   qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
   zhipu: 'https://open.bigmodel.cn/api/paas/v4',
-  deepseek: 'https://api.deepseek.com/v1'
+  deepseek: 'https://api.deepseek.com/v1',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
+  mistral: 'https://api.mistral.ai/v1',
+  baishan: ''
 }
 
 // 从 localStorage 获取 AI 配置

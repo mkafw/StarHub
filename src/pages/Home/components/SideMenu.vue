@@ -194,6 +194,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTagStore } from '@/stores/tag'
 import { useRepoStore } from '@/stores/repo'
+import { wsClient } from '@/services/websocket'
 import { getLanguageColor } from '@/utils/languageColors'
 import { Plus, Close, Grid, Collection, Loading, MagicStick, ArrowDown, Refresh, CircleClose } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage, ElNotification } from 'element-plus'
@@ -534,7 +535,10 @@ const handleAutoClassify = async (reclassifyAll = false) => {
     
     // 创建固定的通知句柄
     classifyNotificationHandle.value = null
-    
+
+    // 通知 WebSocket 分类开始
+    try { wsClient.send('classify:start', { total: totalRepos }) } catch {}
+
     // 逐批处理
     for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
       // 检查是否停止
@@ -563,15 +567,16 @@ const handleAutoClassify = async (reclassifyAll = false) => {
       classifyNotificationHandle.value = ElNotification({
         title: t('tag.classifying'),
         message: `${t('tag.overallProgress')}: ${totalClassified}/${totalRepos} (${progressPercent}%)\n` +
-                 t('tag.processingBatch', { 
-                   current: batchIndex + 1, 
-                   total: totalBatches, 
-                   start: start + 1, 
-                   end 
+                 t('tag.processingBatch', {
+                   current: batchIndex + 1,
+                   total: totalBatches,
+                   start: start + 1,
+                   end
                  }),
         type: 'info',
         duration: 0
       })
+      try { wsClient.send('classify:progress', { classified: totalClassified, total: totalRepos, batch: batchIndex + 1, batches: totalBatches }) } catch {}
       
       // 如果需要 README，先获取这批50个的 README
       let batchWithReadme = batchRepos
@@ -796,13 +801,14 @@ const handleAutoClassify = async (reclassifyAll = false) => {
       
       ElNotification({
         title: t('tag.classifySuccess'),
-        message: t('tag.classifySuccessMessage', { 
-          count: totalClassified, 
-          categories: allCategoryMap.size 
+        message: t('tag.classifySuccessMessage', {
+          count: totalClassified,
+          categories: allCategoryMap.size
         }),
         type: 'success',
         duration: 3000
       })
+      try { wsClient.send('classify:done', { classified: totalClassified, categories: allCategoryMap.size }) } catch {}
     }
   } catch (error: any) {
     console.error('Auto classify failed:', error)

@@ -75,6 +75,11 @@ export default defineConfig({
             console.log(`代理响应: ${req.url} -> ${proxyRes.statusCode}`)
           })
         }
+      },
+      // WebSocket 代理：转发 /ws 到 Rust Worker 本地开发服务器
+      '/ws': {
+        target: 'ws://localhost:8787',
+        ws: true
       }
     }
   },

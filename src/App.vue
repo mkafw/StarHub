@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
+import { wsClient } from '@/services/websocket'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 
@@ -35,6 +36,9 @@ onMounted(() => {
   } else {
     document.documentElement.classList.remove('dark')
   }
+
+  // 初始化 WebSocket 连接
+  wsClient.connect()
 })
 
 // 监听主题变化

@@ -1,0 +1,13 @@
+name = "starhub-ws"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-07-07"
+
+# Route: WebSocket connections go to this Worker
+# ⚠️ 部署前请将 zone_id 替换为你的 Cloudflare Zone ID（可在 Dashboard 域名页面找到）
+routes = [
+  { pattern = "stars.qilong.us.ci/ws", zone_id = "" }
+]
+
+# Development settings
+[env.dev]
+workers_dev = true

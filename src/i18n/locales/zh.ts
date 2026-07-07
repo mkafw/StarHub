@@ -23,7 +23,8 @@ export default {
     pageSize: '每页',
     actions: '操作',
     and: '并',
-    or: '或'
+    or: '或',
+    view: '查看'
   },
   login: {
     title: '欢迎使用 StarHub',
@@ -78,7 +79,17 @@ export default {
     addTag: '编辑分类',
     removeTag: '移除分类',
     noDescription: '暂无描述',
-    noReadme: '暂无 README'
+    noReadme: '暂无 README',
+    star: '标星',
+    unstar: '取消标星',
+    starred: '已标星',
+    starredSuccess: '标星成功',
+    unstarredSuccess: '已取消标星',
+    watch: '关注',
+    unwatch: '取消关注',
+    watching: '已关注',
+    watchSuccess: '关注成功',
+    unwatchSuccess: '已取消关注'
   },
   tag: {
     create: '创建分类',
@@ -175,6 +186,9 @@ export default {
     emptyForDefault: '留空则使用默认地址',
     emptyForDefaultModel: '留空则使用默认模型',
     testConnection: '测试连接',
+    syncToCloud: '云端同步 (D1)',
+    syncCloudSuccess: '同步到云端成功！',
+    syncCloudFailed: '同步到云端失败',
     dataBackup: '数据备份与恢复',
     dataBackupDesc: '导出数据将包含所有仓库信息、分类和关联关系。导入数据将会覆盖当前所有数据。',
     exportData: '导出数据',
@@ -207,6 +221,10 @@ export default {
     qwenGuide: '通义千问 (Qwen)',
     zhipuGuide: '智谱 AI (GLM)',
     deepseekGuide: 'DeepSeek',
+    mistralGuide: 'Mistral AI',
+    baishanGuide: '百舸 AI (ai.baishan.com)',
+    enterApiAddress: '填写平台提供的 API 地址',
+    consultProvider: '请咨询平台获取最新的 API 地址和模型名称',
     visitLink: '访问',
     loginAndCreate: '登录后',
     newAPIKey: '创建新的 API Key',
@@ -238,7 +256,10 @@ export default {
     goToSettings: '去配置',
     error: '回答失败，请重试',
     retry: '重试',
-    emptyMessage: '请输入问题'
+    emptyMessage: '请输入问题',
+    focusedRepo: '已在列表中定位到：{name}',
+    taggedSuccess: '已成功为 {repo} 添加分类：{tag}',
+    taggedFailed: '添加分类失败'
   },
   discover: {
     title: '项目发现',
