@@ -44,6 +44,23 @@
         </el-button>
       </div>
       <div class="header-actions" v-if="!selectMode">
+        <el-button-group size="small">
+          <el-button 
+            :type="repoStore.viewMode === 'card' ? 'primary' : ''" 
+            @click="repoStore.setViewMode('card')"
+            title="卡片视图"
+          >
+            <el-icon><Menu /></el-icon>
+          </el-button>
+          <el-button 
+            :type="repoStore.viewMode === 'list' ? 'primary' : ''" 
+            @click="repoStore.setViewMode('list')"
+            title="列表视图"
+          >
+            <el-icon><Operation /></el-icon>
+          </el-button>
+        </el-button-group>
+        <el-divider direction="vertical" />
         <el-dropdown @command="handleSortChange" trigger="click">
           <el-button size="small" text>
             <el-icon><Sort /></el-icon>
@@ -85,11 +102,12 @@
         <el-icon :size="64" class="empty-icon"><Box /></el-icon>
         <p>{{ t('home.noRepos') }}</p>
       </div>
-      <div v-else class="repo-items">
+      <div v-else class="repo-items" :class="repoStore.viewMode">
         <RepoCard
           v-for="repo in sortedRepos"
           :key="`repo-${repo.id}`"
           :repo="repo"
+          :viewMode="repoStore.viewMode"
           :isActive="activeRepo?.id === repo.id"
           :selected="selectedRepos.has(repo.id)"
           :selectMode="selectMode"
@@ -131,7 +149,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import RepoCard from './RepoCard.vue'
 import BatchTagDialog from './BatchTagDialog.vue'
 import type { Repository } from '@/types'
-import { Box, Collection, Close, Check, Sort, Clock, Star, Calendar } from '@element-plus/icons-vue'
+import { Box, Collection, Close, Check, Sort, Clock, Star, Calendar, Menu, Operation } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   repos: Repository[]

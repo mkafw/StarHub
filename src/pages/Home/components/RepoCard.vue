@@ -1,5 +1,5 @@
 <template>
-  <div class="repo-card" :class="{ 'is-active': isActive, 'is-selected': selected, 'select-mode': selectMode }" @click="$emit('click')">
+  <div class="repo-card" :class="{ 'is-active': isActive, 'is-selected': selected, 'select-mode': selectMode, 'list-mode': viewMode === 'list' }" @click="$emit('click')">
     <div class="repo-header">
       <el-checkbox
         v-if="selectMode"
@@ -15,18 +15,40 @@
           <span class="repo-name">{{ repo.name }}</span>
         </a>
       </div>
-      <span
-        @click.stop="toggleTagEdit"
-        class="repo-tag-toggle-btn"
-        :title="editMode ? t('common.close') : t('repo.addTag')"
-      >
-        <el-icon><Collection /></el-icon>
-      </span>
+      <div class="repo-actions" v-if="!selectMode">
+        <el-button
+          class="repo-star-btn"
+          size="small"
+          text
+          :loading="starLoading"
+          @click.stop="toggleStar"
+          :title="isStarred ? t('repo.unstar') : t('repo.star')"
+        >
+          <el-icon><StarFilled v-if="isStarred" class="starred" /><Star v-else /></el-icon>
+        </el-button>
+        <span
+          @click.stop="toggleTagEdit"
+          class="repo-tag-toggle-btn"
+          :title="editMode ? t('common.close') : t('repo.addTag')"
+        >
+          <el-icon><Collection /></el-icon>
+        </span>
+      </div>
     </div>
 
-    <p v-if="repo.description" class="repo-description">
-      {{ repo.description }}
-    </p>
+    <el-tooltip
+      v-if="repo.description"
+      :content="repo.description"
+      placement="top"
+      :show-after="600"
+      :hide-after="0"
+      effect="dark"
+      popper-class="repo-desc-tooltip"
+    >
+      <p class="repo-description">
+        {{ repo.description }}
+      </p>
+    </el-tooltip>
 
     <RepoCardTags
       v-if="repo.id"
@@ -70,8 +92,10 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getLanguageColor } from '@/utils/languageColors'
 import { formatNumber, formatDate } from '@/utils'
+import { githubApi } from '@/api/github'
+import { ElMessage } from 'element-plus'
 import type { Repository } from '@/types'
-import { Star, Collection, ForkSpoon } from '@element-plus/icons-vue'
+import { Star, Collection, ForkSpoon, StarFilled } from '@element-plus/icons-vue'
 import RepoCardTags from './RepoCardTags.vue'
 
 const { t } = useI18n()
@@ -81,6 +105,7 @@ const props = defineProps<{
   isActive?: boolean
   selected?: boolean
   selectMode?: boolean
+  viewMode?: 'card' | 'list'
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +114,28 @@ const emit = defineEmits<{
 }>()
 
 const editMode = ref(false)
+const starLoading = ref(false)
+const isStarred = ref(true) // Default true for stars list
+
+const toggleStar = async () => {
+  const [owner, name] = props.repo.full_name.split('/')
+  starLoading.value = true
+  try {
+    if (isStarred.value) {
+      await githubApi.unstarRepo(owner, name)
+      isStarred.value = false
+      ElMessage.success(t('repo.unstarredSuccess'))
+    } else {
+      await githubApi.starRepo(owner, name)
+      isStarred.value = true
+      ElMessage.success(t('repo.starredSuccess'))
+    }
+  } catch (error) {
+    ElMessage.error(t('common.error'))
+  } finally {
+    starLoading.value = false
+  }
+}
 
 const toggleTagEdit = () => {
   editMode.value = !editMode.value
@@ -128,6 +175,49 @@ watch(() => props.repo.id, () => {
       display: block;
     }
   }
+
+  // List mode styles
+  &.list-mode {
+    padding: $spacing-sm $spacing-md;
+    
+    .repo-description,
+    .repo-updated {
+      display: none;
+    }
+    
+    .repo-header {
+      margin-bottom: 0;
+    }
+    
+    .repo-footer {
+      margin-top: 0;
+      justify-content: flex-end;
+      position: absolute;
+      right: 100px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .repo-meta {
+      gap: $spacing-sm;
+    }
+
+    .repo-title {
+      max-width: 60%;
+    }
+
+    .repo-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .repo-tag-toggle-btn {
+      position: static;
+      display: block !important;
+      padding: 4px;
+    }
+  }
 }
 
 .repo-header {
@@ -158,16 +248,42 @@ watch(() => props.repo.id, () => {
   }
 }
 
+.repo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repo-star-btn {
+  padding: 4px;
+  height: auto;
+  
+  .el-icon {
+    font-size: 16px;
+    color: var(--text-tertiary);
+    
+    &.starred {
+      color: #fbbf24;
+    }
+  }
+  
+  &:hover {
+    .el-icon {
+      color: #fbbf24;
+    }
+  }
+}
+
 .repo-title {
   flex: 1;
   min-width: 0;
 
-    .repo-link {
-      text-decoration: none;
-      color: var(--text-primary);
-      font-weight: 600;
-      font-size: 0.875rem;
-    
+  .repo-link {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+  
     &:hover {
       color: var(--el-color-primary);
       text-decoration: underline;
@@ -263,3 +379,10 @@ watch(() => props.repo.id, () => {
 }
 </style>
 
+<style lang="scss">
+.repo-desc-tooltip {
+  max-width: 300px !important;
+  line-height: 1.5 !important;
+  font-size: 0.8125rem !important;
+}
+</style>

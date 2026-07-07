@@ -16,10 +16,30 @@
             <h1 class="repo-name">{{ repo.full_name }}</h1>
             <p v-if="repo.description" class="repo-desc">{{ repo.description }}</p>
           </div>
-          <a class="github-link" :href="repo.html_url" target="_blank" rel="noopener">
-            <el-icon><Link /></el-icon>
-            <span>GitHub</span>
-          </a>
+          <div class="header-actions">
+            <el-button-group>
+              <el-button
+                :type="isStarred ? 'warning' : ''"
+                :loading="starLoading"
+                @click="toggleStar"
+              >
+                <el-icon><Star v-if="isStarred" /><StarFilled v-else /></el-icon>
+                <span>{{ isStarred ? t('repo.starred') : t('repo.star') }}</span>
+              </el-button>
+              <el-button
+                :type="isWatching ? 'primary' : ''"
+                :loading="watchLoading"
+                @click="toggleWatch"
+              >
+                <el-icon><Bell v-if="isWatching" /><BellFilled v-else /></el-icon>
+                <span>{{ isWatching ? t('repo.watching') : t('repo.watch') }}</span>
+              </el-button>
+            </el-button-group>
+            <a class="github-link" :href="repo.html_url" target="_blank" rel="noopener">
+              <el-icon><Link /></el-icon>
+              <span>GitHub</span>
+            </a>
+          </div>
         </div>
         
         <div class="repo-meta">
@@ -101,6 +121,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTagStore } from '@/stores/tag'
 import { useThemeStore } from '@/stores/theme'
 import { githubApi } from '@/api/github'
@@ -125,8 +146,13 @@ import {
   Close,
   Document,
   Link,
-  ForkSpoon
+  ForkSpoon,
+  Star,
+  StarFilled,
+  Bell,
+  BellFilled
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 // 配置 marked 使用 GFM 扩展和代码高亮
 marked.use(
@@ -146,6 +172,7 @@ marked.use(
 )
 
 const themeStore = useThemeStore()
+const { t } = useI18n()
 
 const props = defineProps<{
   repo: Repository
@@ -162,6 +189,67 @@ const rawReadmeContent = ref('')
 const showTagDialog = ref(false)
 const showAiChat = ref(false)
 const selectedTagId = ref('')
+
+// Star & Watch status
+const isStarred = ref(true)
+const isWatching = ref(false)
+const starLoading = ref(false)
+const watchLoading = ref(false)
+
+const checkStatus = async () => {
+  if (!props.repo) return
+  const [owner, repo] = props.repo.full_name.split('/')
+  
+  try {
+    githubApi.checkStarred(owner, repo).then(() => {
+      isStarred.value = true
+    }).catch(() => {
+      isStarred.value = false
+    })
+
+    githubApi.checkWatching(owner, repo).then((res) => {
+      isWatching.value = !!res.data.subscribed
+    }).catch(() => {
+      isWatching.value = false
+    })
+  } catch (error) {
+    console.error('Failed to check status:', error)
+  }
+}
+
+const toggleStar = async () => {
+  const [owner, repo] = props.repo.full_name.split('/')
+  starLoading.value = true
+  try {
+    if (isStarred.value) {
+      await githubApi.unstarRepo(owner, repo)
+      isStarred.value = false
+      ElMessage.success(t('repo.unstarredSuccess'))
+    } else {
+      await githubApi.starRepo(owner, repo)
+      isStarred.value = true
+      ElMessage.success(t('repo.starredSuccess'))
+    }
+  } catch (error) {
+    ElMessage.error(t('common.error'))
+  } finally {
+    starLoading.value = false
+  }
+}
+
+const toggleWatch = async () => {
+  const [owner, repo] = props.repo.full_name.split('/')
+  watchLoading.value = true
+  try {
+    await githubApi.watchRepo(owner, repo, !isWatching.value)
+    isWatching.value = !isWatching.value
+    ElMessage.success(isWatching.value ? t('repo.watchSuccess') : t('repo.unwatchSuccess'))
+  } catch (error) {
+    ElMessage.error(t('common.error'))
+  } finally {
+    watchLoading.value = false
+  }
+}
 
 const availableTags = computed(() => {
   const currentTagIds = repoTags.value.map((t) => t.id)
@@ -251,6 +339,7 @@ watch(
     if (props.repo) {
       loadReadme()
       loadRepoTags()
+      checkStatus()
     }
   },
   { immediate: true }
@@ -325,6 +414,18 @@ watch(() => themeStore.theme, () => {
 .repo-info {
   flex: 1;
   min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-end;
+  }
 }
 
 .repo-name {

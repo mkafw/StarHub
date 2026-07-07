@@ -3,12 +3,6 @@ import qs from 'query-string'
 import type { AxiosResponse } from 'axios'
 import type { User, Repository } from '@/types'
 
-export interface SearchReposResult {
-  total_count: number
-  incomplete_results: boolean
-  items: Repository[]
-}
-
 export const githubApi = {
   // Get authenticated user
   getLoginUser(): Promise<AxiosResponse<User>> {
@@ -55,15 +49,28 @@ export const githubApi = {
     return http.get(`/repos/${owner}/${repo}`)
   },
 
-  // Search GitHub repositories (for discover feature)
-  searchRepos(
-    query: string,
-    perPage: number = 20,
-    page: number = 1
-  ): Promise<AxiosResponse<SearchReposResult>> {
-    return http.get(
-      `/search/repositories?${qs.stringify({ q: query, per_page: perPage, page, sort: 'stars', order: 'desc' })}`
-    )
+  // Check if a repository is starred
+  checkStarred(owner: string, repo: string): Promise<AxiosResponse<void>> {
+    return http.get(`/user/starred/${owner}/${repo}`)
+  },
+
+  // Star a repository
+  starRepo(owner: string, repo: string): Promise<AxiosResponse<void>> {
+    return http.put(`/user/starred/${owner}/${repo}`)
+  },
+
+  // Unstar a repository
+  unstarRepo(owner: string, repo: string): Promise<AxiosResponse<void>> {
+    return http.delete(`/user/starred/${owner}/${repo}`)
+  },
+
+  // Watch/Unwatch a repository (Subscription)
+  watchRepo(owner: string, repo: string, subscribed: boolean = true): Promise<AxiosResponse<any>> {
+    return http.put(`/repos/${owner}/${repo}/subscription`, { subscribed })
+  },
+
+  checkWatching(owner: string, repo: string): Promise<AxiosResponse<any>> {
+    return http.get(`/repos/${owner}/${repo}/subscription`)
   }
 }
 

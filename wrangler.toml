@@ -9,3 +9,9 @@ directory = "dist"
 # 环境变量（CLIENT_ID 可公开，CLIENT_SECRET 用 secret 加密存储）
 [vars]
 CLIENT_ID = "Ov23liKH9x1DCueWwcud"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "starhub-db"
+database_id = "7b54a575-70cb-4e3b-b19a-46c93cd122eb"
+migrations_dir = "migrations"

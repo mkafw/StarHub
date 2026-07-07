@@ -39,9 +39,9 @@
 
           <!-- Chat Interface -->
           <div v-else class="chat-interface">
-            <div class="message-list" ref="messageListRef">
+            <div class="message-list" ref="messageListRef" @click="handleMessageClick">
               <div v-if="messages.length === 0" class="greeting">
-                {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.smartGreeting') }}
+                {{ mode === 'single' ? t('chat.singleGreeting') : t('chat.multiGreeting') }}
               </div>
 
               <div
@@ -54,27 +54,44 @@
                   <el-icon v-else><Cpu /></el-icon>
                 </div>
                 <div class="bubble-content">
-                  <div class="bubble-text">{{ msg.displayContent }}</div>
-
-                  <!-- Action chips for assistant messages -->
-                  <div v-if="msg.role === 'assistant' && msg.actions?.length" class="action-chips">
-                    <el-button
-                      v-for="(action, ai) in msg.actions"
-                      :key="ai"
-                      size="small"
-                      :type="action.type === 'discover' ? 'success' : 'primary'"
-                      plain
-                      @click="executeAction(action)"
-                    >
-                      {{ actionLabel(action) }}
-                    </el-button>
-                  </div>
-
-                  <!-- Retry button on error -->
-                  <div v-if="msg.role === 'assistant' && msg.error" class="bubble-error">
+                  <div class="bubble-text" v-html="renderMessage(msg.content)"></div>
+                  <div
+                    v-if="msg.role === 'assistant' && msg.error"
+                    class="bubble-error"
+                  >
                     <el-button size="small" text type="danger" @click="retryMessage(idx)">
                       {{ t('chat.retry') }}
                     </el-button>
+                  </div>
+                  <!-- Repository Interactive Actions -->
+                  <div v-if="msg.role === 'assistant' && !isStreaming && detectRepos(msg.content).length > 0" class="bubble-repos">
+                    <div v-for="repoName in detectRepos(msg.content)" :key="repoName" class="mini-repo-card">
+                      <div class="mini-repo-header">
+                        <el-icon><Box /></el-icon>
+                        <span class="mini-repo-name">{{ repoName }}</span>
+                      </div>
+                      <div class="mini-repo-desc" v-if="getRepoByName(repoName)?.description">
+                        {{ getRepoByName(repoName)?.description }}
+                      </div>
+                      <div class="mini-repo-actions">
+                        <el-button size="small" type="primary" plain @click="focusRepo(repoName)">
+                          {{ t('common.view') }}
+                        </el-button>
+                        <el-dropdown trigger="click" @command="(tagId: string) => handleTagRepo(repoName, tagId)">
+                          <el-button size="small" type="success" plain>
+                            {{ t('repo.addTag') }}
+                            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item v-for="tag in tagStore.tags" :key="tag.id" :command="tag.id">
+                                <span :style="{ color: tag.color }">{{ tag.emoji }} {{ tag.name }}</span>
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -90,11 +107,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Mode hint -->
-            <div class="mode-hint" v-if="mode === 'multi'">
-              <el-tag size="small" type="info" effect="plain">{{ t('chat.smartModeHint') }}</el-tag>
             </div>
 
             <div class="input-area">
@@ -137,15 +149,16 @@
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useTagStore } from '@/stores/tag'
+import { useRepoStore } from '@/stores/repo'
 import { isAIConfigured } from '@/config/ai'
+import { ElMessage } from 'element-plus'
 import {
   getChatConfig,
   buildSingleRepoSysPrompt,
-  buildSmartFilterSysPrompt,
-  parseSmartActions,
+  buildMultiRepoSysPrompt,
   streamChat,
-  type ChatMessage,
-  type SmartAction
+  type ChatMessage
 } from '@/services/chat'
 import type { Repository } from '@/types'
 import {
@@ -153,11 +166,15 @@ import {
   WarningFilled,
   UserFilled,
   Cpu,
-  Close
+  Close,
+  Box,
+  ArrowDown
 } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const tagStore = useTagStore()
+const repoStore = useRepoStore()
 
 const props = defineProps<{
   modelValue: boolean
@@ -169,15 +186,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'smartFilter': [action: SmartAction]
-  'discover': [query: string]
+  'repo-click': [repo: Repository]
 }>()
 
 interface DisplayMessage {
   role: 'user' | 'assistant'
-  content: string       // raw content (with markers)
-  displayContent: string // cleaned content (markers removed)
-  actions?: SmartAction[]
+  content: string
   error?: boolean
 }
 
@@ -205,41 +219,88 @@ watch(() => props.modelValue, (val) => {
   panelVisible.value = val
 })
 
+// Repo interaction logic
+const detectRepos = (content: string): string[] => {
+  if (!props.allRepos) return []
+  // Matches "owner/repo" format
+  const matches = content.match(/[a-zA-Z0-9-._]+\/[a-zA-Z0-9-._]+/g) || []
+  const uniqueMatches = Array.from(new Set(matches))
+  // Filter to only include repos we actually have
+  return uniqueMatches.filter(name => 
+    props.allRepos?.some(r => r.full_name === name)
+  )
+}
+
+const getRepoByName = (name: string): Repository | undefined => {
+  return props.allRepos?.find(r => r.full_name === name)
+}
+
+const renderMessage = (content: string): string => {
+  if (!content) return ''
+  // Escaping HTML to prevent XSS while allowing our own links
+  let html = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+  // Linkify repos
+  const repos = detectRepos(content)
+  repos.forEach(repoName => {
+    const escapedName = repoName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`\\b${escapedName}\\b`, 'g')
+    html = html.replace(regex, `<span class="repo-link-inline" data-repo="${repoName}">${repoName}</span>`)
+  })
+
+  // Basic markdown-like bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  
+  return html
+}
+
+const focusRepo = (repoName: string) => {
+  const repo = getRepoByName(repoName)
+  if (repo) {
+    // Focus in main list
+    repoStore.setSearchQuery(repoName)
+    emit('repo-click', repo)
+    // Optional: close panel? Maybe not, user might want to continue chatting
+    ElMessage.success(t('chat.focusedRepo', { name: repoName }))
+  }
+}
+
+const handleTagRepo = async (repoName: string, tagId: string) => {
+  const repo = getRepoByName(repoName)
+  const tag = tagStore.tags.find(t => t.id === tagId)
+  if (repo && tag) {
+    try {
+      await tagStore.addTagToRepo(repo.id, tagId)
+      ElMessage.success(t('chat.taggedSuccess', { repo: repoName, tag: tag.name }))
+    } catch (error) {
+      ElMessage.error(t('chat.taggedFailed'))
+    }
+  }
+}
+
+const handleMessageClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (target.classList.contains('repo-link-inline')) {
+    const repoName = target.getAttribute('data-repo')
+    if (repoName) {
+      focusRepo(repoName)
+    }
+  }
+}
+
 function buildSystemPrompt(): string {
   if (props.mode === 'single' && props.repo) {
     return buildSingleRepoSysPrompt(props.repo, props.readmeContent)
   }
   if (props.mode === 'multi' && props.allRepos?.length) {
-    return buildSmartFilterSysPrompt(props.allRepos)
+    return buildMultiRepoSysPrompt(props.allRepos)
   }
   return 'You are a helpful assistant.'
-}
-
-function cleanActionMarkers(text: string): string {
-  return text
-    .replace(/\[\[FILTER:[^\]]+\]\]/g, '')
-    .replace(/\[\[TAG:[^\]]+\]\]/g, '')
-    .replace(/\[\[DISCOVER:[^\]]+\]\]/g, '')
-    .trim()
-}
-
-function actionLabel(action: SmartAction): string {
-  switch (action.type) {
-    case 'filter':
-      return `🔍 ${t('chat.applyFilter')}${action.query ? `: ${action.query}` : ''}${action.tag ? `: ${action.tag}` : ''}${action.language ? `: ${action.language}` : ''}`
-    case 'tag':
-      return `🏷️ ${t('chat.applyTag')}: ${action.tagName}`
-    case 'discover':
-      return `🔎 ${t('chat.discover')}: ${action.query?.slice(0, 30)}...`
-  }
-}
-
-function executeAction(action: SmartAction) {
-  if (action.type === 'discover') {
-    emit('discover', action.query || '')
-  } else {
-    emit('smartFilter', action)
-  }
 }
 
 async function sendMessage() {
@@ -248,7 +309,7 @@ async function sendMessage() {
 
   const config = getChatConfig()
 
-  messages.value.push({ role: 'user', content: text, displayContent: text })
+  messages.value.push({ role: 'user', content: text })
   inputText.value = ''
 
   const systemPrompt = buildSystemPrompt()
@@ -275,30 +336,18 @@ async function sendMessage() {
     )
 
     if (fullText) {
-      // Parse actions from the response
-      const actions = parseSmartActions(fullText)
-      const displayContent = cleanActionMarkers(fullText)
-
-      messages.value.push({
-        role: 'assistant',
-        content: fullText,
-        displayContent,
-        actions: actions.length > 0 ? actions : undefined
-      })
+      messages.value.push({ role: 'assistant', content: fullText })
     }
     streamBuffer.value = ''
   } catch (err: any) {
     streamBuffer.value = ''
     if (err?.name === 'AbortError') return
 
-    const errorMsg = err?.message === 'rate_limit'
-      ? 'API rate limit exceeded. Please wait a moment and try again.'
-      : t('chat.error')
-
     messages.value.push({
       role: 'assistant',
-      content: errorMsg,
-      displayContent: errorMsg,
+      content: err?.message === 'rate_limit'
+        ? 'API rate limit exceeded. Please wait a moment and try again.'
+        : t('chat.error'),
       error: true
     })
   } finally {
@@ -379,7 +428,7 @@ onBeforeUnmount(() => {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 420px;
+  width: 400px;
   z-index: 1001;
   background: var(--bg-primary);
   border-left: 1px solid var(--border);
@@ -532,16 +581,67 @@ onBeforeUnmount(() => {
   word-break: break-word;
 }
 
-.action-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-  padding-left: 4px;
-}
-
 .bubble-error {
   margin-top: 4px;
+}
+
+.bubble-repos {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-repo-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  [data-theme='dark'] & {
+    background: #1c2333;
+    border-color: rgba(96, 165, 250, 0.2);
+  }
+}
+
+.mini-repo-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.mini-repo-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mini-repo-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+:deep(.repo-link-inline) {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 1px dashed var(--el-color-primary);
+  
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 .cursor-blink {
@@ -551,12 +651,6 @@ onBeforeUnmount(() => {
 
 @keyframes blink {
   50% { opacity: 0; }
-}
-
-.mode-hint {
-  padding: 4px 12px;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .input-area {

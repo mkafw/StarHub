@@ -32,17 +32,7 @@
             v-model="showAiChat"
             mode="multi"
             :all-repos="repoStore.repos"
-            @smart-filter="handleSmartFilter"
-            @discover="handleDiscover"
-          />
-
-          <DiscoverPanel
-            v-if="showDiscover"
-            :search-query="discoverQuery"
-            :discover-results="discoverResults"
-            :loading="discoverLoading"
-            @close="showDiscover = false"
-            @open-repo="handleDiscoverOpenRepo"
+            @repo-click="handleRepoClick"
           />
         </div>
       </template>
@@ -60,9 +50,6 @@ import RepoList from './components/RepoList.vue'
 import DetailView from './components/DetailView.vue'
 import EmptyState from './components/EmptyState.vue'
 import AiChatDialog from './components/AiChatDialog.vue'
-import DiscoverPanel from './components/DiscoverPanel.vue'
-import { githubApi } from '@/api/github'
-import type { SmartAction } from '@/services/chat'
 import type { Repository } from '@/types'
 
 const repoStore = useRepoStore()
@@ -74,12 +61,6 @@ const showAiChat = ref(false)
 const filteredRepos = computed(() => repoStore.filteredRepos)
 const loading = computed(() => repoStore.isFetching)
 const syncing = computed(() => repoStore.isSyncing)
-
-// Discover state
-const showDiscover = ref(false)
-const discoverQuery = ref('')
-const discoverResults = ref<Repository[]>([])
-const discoverLoading = ref(false)
 
 // 内容区宽度调整
 const repoListWidth = ref(480)
@@ -113,46 +94,6 @@ const handleRepoClick = (repo: Repository) => {
 
 const handleCloseDetail = () => {
   selectedRepo.value = null
-}
-
-// Handle smart filter actions from AI chat
-function handleSmartFilter(action: SmartAction) {
-  if (action.query) {
-    repoStore.setSearchQuery(action.query)
-  }
-  if (action.language) {
-    repoStore.setSelectedLanguage(action.language)
-  }
-  if (action.tag) {
-    // Find tag by name
-    const tag = tagStore.tags.find((t: any) => t.name === action.tag)
-    if (tag) {
-      repoStore.setSelectedTag(tag.id)
-    }
-  }
-  // Reset to first page
-  repoStore.setCurrentPage(1)
-}
-
-// Handle discover action from AI chat
-async function handleDiscover(query: string) {
-  discoverQuery.value = query
-  showDiscover.value = true
-  discoverLoading.value = true
-
-  try {
-    const res = await githubApi.searchRepos(query, 20, 1)
-    discoverResults.value = res.data.items || []
-  } catch (err) {
-    console.error('Discover search failed:', err)
-    discoverResults.value = []
-  } finally {
-    discoverLoading.value = false
-  }
-}
-
-function handleDiscoverOpenRepo(url: string) {
-  window.open(url, '_blank')
 }
 
 onMounted(async () => {
