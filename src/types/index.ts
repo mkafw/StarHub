@@ -67,6 +67,14 @@ export interface ApiResponse<T> {
   headers?: Record<string, string>
 }
 
+export interface RepoEmbedding {
+  repoId: number
+  vector: Float64Array | number[]
+  updatedAt: number
+}
+
+export type RepoCategory = 'junk' | 'tool' | 'learning' | 'longterm' | 'app'
+
 export type Theme = 'light' | 'dark'
 export type Language = 'zh' | 'en'
 

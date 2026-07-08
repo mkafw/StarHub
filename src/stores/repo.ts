@@ -360,6 +360,9 @@ export const useRepoStore = defineStore('repo', {
         this.$state.currentSyncId = 0
         try { wsClient.send('sync:done', { count: allReposMap.size }) } catch {}
 
+        // Trigger auto-indexing for new repos (non-blocking)
+        this.autoIndexAfterSync()
+
         // Clean up tags for non-existent repos (will be called from component to avoid circular dependency)
       } catch (error: any) {
         console.error('Failed to load repos:', error)
@@ -577,6 +580,18 @@ export const useRepoStore = defineStore('repo', {
         this.$state.isSyncing = false
         this.$state.isFetching = false
         throw error
+      }
+    },
+
+    // ── 自动索引：同步完成后为新仓库生成 embedding ──
+    async autoIndexAfterSync() {
+      try {
+        const { autoIndexNewRepos } = await import('@/services/autoIndex')
+        const { useTagStore } = await import('./tag')
+        const tagStore = useTagStore()
+        await autoIndexNewRepos(this.$state.repos, tagStore)
+      } catch (err) {
+        console.warn('[autoIndex] background indexing failed:', err)
       }
     }
   }

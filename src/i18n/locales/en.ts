@@ -44,7 +44,10 @@ export default {
     repo: 'repo',
     repos: 'repos',
     selectRepo: 'Select a Repository',
-    selectRepoDesc: 'Choose a repository from the list to view its details'
+    selectRepoDesc: 'Choose a repository from the list to view its details',
+    semanticPlaceholder: 'Search repos with natural language...',
+    semanticResults: 'Found {count} relevant repos',
+    semanticNoResults: 'No matching repos found, try a different query'
   },
   menu: {
     all: 'All',

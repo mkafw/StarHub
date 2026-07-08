@@ -44,7 +44,10 @@ export default {
     repo: '个仓库',
     repos: '个仓库',
     selectRepo: '选择一个仓库',
-    selectRepoDesc: '从列表中选择一个仓库查看详情'
+    selectRepoDesc: '从列表中选择一个仓库查看详情',
+    semanticPlaceholder: '自然语言搜索仓库...',
+    semanticResults: '找到 {count} 个相关仓库',
+    semanticNoResults: '没有找到匹配的仓库，试试换个描述'
   },
   menu: {
     all: '全部',

@@ -7,6 +7,13 @@
       <template #main>
         <div class="home-content">
           <div class="repo-list-wrapper" :style="{ width: repoListWidth + 'px' }">
+            <div class="repo-list-header">
+              <SemanticSearch
+                :repos="repoStore.repos"
+                :active-repo="selectedRepo"
+                @select="handleRepoClick"
+              />
+            </div>
             <RepoList
               :repos="filteredRepos"
               :loading="loading"
@@ -50,6 +57,7 @@ import RepoList from './components/RepoList.vue'
 import DetailView from './components/DetailView.vue'
 import EmptyState from './components/EmptyState.vue'
 import AiChatDialog from './components/AiChatDialog.vue'
+import SemanticSearch from './components/SemanticSearch.vue'
 import type { Repository } from '@/types'
 
 const repoStore = useRepoStore()
@@ -131,11 +139,18 @@ onMounted(async () => {
   max-width: 800px;
   height: 100%;
   flex-shrink: 0;
-  
+  display: flex;
+  flex-direction: column;
+
   :deep(.repo-list) {
     width: 100%;
     border-right: none;
   }
+}
+
+.repo-list-header {
+  padding: $spacing-sm $spacing-md;
+  flex-shrink: 0;
 }
 
 .content-resize-handle {

@@ -11,3 +11,7 @@ routes = [
 # Development settings
 [env.dev]
 workers_dev = true
+
+# Cloudflare Workers AI binding for embeddings
+[ai]
+binding = "AI"
