@@ -1,6 +1,7 @@
 name = "starhub"
-main = "functions/api/getToken.ts"
+main = "functions/api/wsHandler.ts"
 compatibility_date = "2026-05-27"
+compatibility_flags = ["nodejs_compat"]
 
 # 静态文件托管（Cloudflare 新架构：Pages 融合到 Workers）
 [assets]
@@ -15,3 +16,7 @@ binding = "DB"
 database_name = "starhub-db"
 database_id = "7b54a575-70cb-4e3b-b19a-46c93cd122eb"
 migrations_dir = "migrations"
+
+# Workers AI binding for semantic search and classification
+[ai]
+binding = "AI"

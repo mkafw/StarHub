@@ -76,7 +76,7 @@ export default defineConfig({
           })
         }
       },
-      // WebSocket 代理：转发 /ws 到 Rust Worker 本地开发服务器
+      // WebSocket 代理：转发 /ws 到本地 wrangler dev 服务器
       '/ws': {
         target: 'ws://localhost:8787',
         ws: true
