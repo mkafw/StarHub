@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Close } from '@element-plus/icons-vue'
 import { getLanguageColor } from '@/utils/languageColors'

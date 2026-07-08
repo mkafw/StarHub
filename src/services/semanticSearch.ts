@@ -7,7 +7,7 @@
 
 import { wsClient } from './websocket'
 import { db } from '@/db'
-import type { Repository, RepoEmbedding } from '@/types'
+import type { Repository } from '@/types'
 
 // ── Cosine Similarity ────────────────────────────────────
 
