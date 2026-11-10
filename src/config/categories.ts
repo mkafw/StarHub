@@ -364,6 +364,51 @@ export interface CategoryPreset {
 
 export const DEFAULT_CATEGORIES: CategoryPreset[] = [
   {
+    name: '文戏 · 配音字幕',
+    nameEn: 'Civil: Voice & Subtitles',
+    emoji: '🎙️',
+    description: 'AI 语音合成(TTS)、情感配音、口癖切除与双层字幕打轴',
+    descriptionEn: 'TTS, emotional voice acting, pause removal & dual-layer subtitles',
+    color: '#36cfc9',
+    keywords: ['tts', 'voice', 'speech', 'subtitles', 'whisper', 'sensevoice', 'cosyvoice', 'chattts', 'audio', 'srt', 'cutcli']
+  },
+  {
+    name: '武戏 · 运镜视效',
+    nameEn: 'Action: Camera & VFX',
+    emoji: '💥',
+    description: 'AI 视频生成、运镜控制、受力碰撞、粒子解构与冲击波视效',
+    descriptionEn: 'AI video generation, camera motion, physics & action VFX',
+    color: '#f5222d',
+    keywords: ['video-generation', 'video', 'kling', 'wan', 'cogvideo', 'hunyuanvideo', 'comfyui', 'camera', 'vfx', 'motion', 'seedance']
+  },
+  {
+    name: '视觉 · 角色锁脸',
+    nameEn: 'Visual: Face Consistency',
+    emoji: '🎭',
+    description: '角色面部一致性、三视图骨相锁定、姿态控制与生图模型',
+    descriptionEn: 'Character facial consistency, multi-view lock & portrait models',
+    color: '#722ed1',
+    keywords: ['instantid', 'faceid', 'lora', 'flux', 'character', 'consistency', 'portrait', 'ip-adapter', 'photomaker']
+  },
+  {
+    name: '后期 · 剪辑工程',
+    nameEn: 'Post-Production: Editing',
+    emoji: '✂️',
+    description: '剪映草稿自动构建、FFmpeg 硬件编解码、多轨时间线与卡点成片',
+    descriptionEn: 'Automated CapCut drafts, FFmpeg hardware encoding & timeline assembly',
+    color: '#fa8c16',
+    keywords: ['cutcli', 'ffmpeg', 'capcut', 'draft', 'jianying', 'timeline', 'montage', 'video-editing', 'render']
+  },
+  {
+    name: '设定 · 灵感世界观',
+    nameEn: 'World-Building & Lore',
+    emoji: '📜',
+    description: '短剧大纲、科学修仙设定、长篇网文外挂、情节钩子与故事图谱',
+    descriptionEn: 'Short drama outlines, sci-fi cultivation lore, hooks & plot graph',
+    color: '#1890ff',
+    keywords: ['story', 'drama', 'screenplay', 'prompt', 'world-building', 'lore', 'fiction', 'novel', 'script', 'graphify']
+  },
+  {
     name: 'Web 开发',
     nameEn: 'Web Development',
     emoji: '🌐',
