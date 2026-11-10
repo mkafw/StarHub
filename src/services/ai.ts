@@ -443,7 +443,8 @@ function getDelayTime(provider: string): number {
     case 'zhipu':
     case 'deepseek':
     case 'baishan':
-      return 2 // 国内 API 通常限制更宽松
+    case 'nvidia':
+      return 2
     case 'mistral':
       return 3
     default:

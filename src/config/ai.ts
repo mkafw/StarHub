@@ -1,6 +1,6 @@
 // AI 配置
 export interface AIConfig {
-  provider: 'openai' | 'claude' | 'qwen' | 'zhipu' | 'deepseek' | 'gemini' | 'mistral' | 'baishan'
+  provider: 'openai' | 'claude' | 'qwen' | 'zhipu' | 'deepseek' | 'gemini' | 'mistral' | 'baishan' | 'nvidia'
   apiKey: string
   baseURL?: string
   model?: string
@@ -25,7 +25,8 @@ export const DEFAULT_MODELS = {
   deepseek: 'deepseek-chat',
   gemini: 'gemini-2.0-flash',
   mistral: 'mistral-small-latest',
-  baishan: 'baishan-model'
+  baishan: 'baishan-model',
+  nvidia: 'meta/llama-3.3-70b-instruct'
 }
 
 // 各平台默认 API 地址
@@ -37,7 +38,8 @@ export const DEFAULT_BASE_URLS = {
   deepseek: 'https://api.deepseek.com/v1',
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
   mistral: 'https://api.mistral.ai/v1',
-  baishan: ''
+  baishan: '',
+  nvidia: 'https://integrate.api.nvidia.com/v1'
 }
 
 // 从 localStorage 获取 AI 配置

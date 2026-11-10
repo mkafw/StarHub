@@ -226,6 +226,7 @@ export default {
     deepseekGuide: 'DeepSeek',
     mistralGuide: 'Mistral AI',
     baishanGuide: '百舸 AI (ai.baishan.com)',
+    nvidiaGuide: 'NVIDIA NIM (Llama 3.3 / DeepSeek R1)',
     enterApiAddress: '填写平台提供的 API 地址',
     consultProvider: '请咨询平台获取最新的 API 地址和模型名称',
     visitLink: '访问',

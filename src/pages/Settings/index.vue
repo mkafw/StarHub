@@ -77,6 +77,7 @@
               <el-option :label="t('settings.deepseekGuide')" value="deepseek" />
               <el-option :label="t('settings.mistralGuide')" value="mistral" />
               <el-option :label="t('settings.baishanGuide')" value="baishan" />
+              <el-option :label="t('settings.nvidiaGuide')" value="nvidia" />
             </el-select>
           </el-form-item>
 
@@ -279,6 +280,15 @@
                 <li>{{ t('settings.loginAndCreate') }} API Key</li>
                 <li>{{ t('settings.copyKey') }} {{ t('common.and') }} {{ t('settings.pasteAbove') }}</li>
                 <li>{{ t('settings.enterApiAddress') }}（{{ t('settings.consultProvider') }}）</li>
+              </ol>
+            </el-collapse-item>
+
+            <el-collapse-item :title="t('settings.nvidiaGuide')" name="nvidia">
+              <ol>
+                <li>{{ t('settings.visitLink') }} <a href="https://build.nvidia.com/" target="_blank">NVIDIA NIM</a></li>
+                <li>{{ t('settings.loginAndCreate') }} API Key</li>
+                <li>{{ t('settings.copyKey') }} {{ t('common.and') }} {{ t('settings.pasteAbove') }}</li>
+                <li>{{ t('settings.recommendedModel') }}: meta/llama-3.3-70b-instruct {{ t('common.or') }} deepseek-ai/deepseek-r1</li>
               </ol>
             </el-collapse-item>
           </el-collapse>
@@ -672,9 +682,14 @@ const handleSavePreset = async () => {
 }
 
 const handleProviderChange = () => {
-  // 当切换平台时，清空自定义配置，使用默认值
-  aiConfig.value.baseURL = ''
-  aiConfig.value.model = ''
+  if (aiConfig.value.provider === 'nvidia') {
+    aiConfig.value.baseURL = DEFAULT_BASE_URLS.nvidia
+    aiConfig.value.model = DEFAULT_MODELS.nvidia
+  } else {
+    // 当切换其他平台时，清空自定义配置，使用默认值
+    aiConfig.value.baseURL = ''
+    aiConfig.value.model = ''
+  }
 }
 
 const getDefaultBaseURL = () => {
@@ -686,11 +701,11 @@ const getDefaultModel = () => {
 }
 
 const resetBaseURL = () => {
-  aiConfig.value.baseURL = ''
+  aiConfig.value.baseURL = aiConfig.value.provider === 'nvidia' ? DEFAULT_BASE_URLS.nvidia : ''
 }
 
 const resetModel = () => {
-  aiConfig.value.model = ''
+  aiConfig.value.model = aiConfig.value.provider === 'nvidia' ? DEFAULT_MODELS.nvidia : ''
 }
 
 const handleSave = () => {
