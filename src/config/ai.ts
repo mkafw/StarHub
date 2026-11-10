@@ -26,7 +26,7 @@ export const DEFAULT_MODELS = {
   gemini: 'gemini-2.0-flash',
   mistral: 'mistral-small-latest',
   baishan: 'baishan-model',
-  nvidia: 'meta/llama-3.3-70b-instruct'
+  nvidia: 'meta/llama-3.2-90b-vision-instruct'
 }
 
 // 各平台默认 API 地址

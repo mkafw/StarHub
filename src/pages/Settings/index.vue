@@ -288,7 +288,7 @@
                 <li>{{ t('settings.visitLink') }} <a href="https://build.nvidia.com/" target="_blank">NVIDIA NIM</a></li>
                 <li>{{ t('settings.loginAndCreate') }} API Key</li>
                 <li>{{ t('settings.copyKey') }} {{ t('common.and') }} {{ t('settings.pasteAbove') }}</li>
-                <li>{{ t('settings.recommendedModel') }}: meta/llama-3.3-70b-instruct {{ t('common.or') }} deepseek-ai/deepseek-r1</li>
+                <li>{{ t('settings.recommendedModel') }}: meta/llama-3.2-90b-vision-instruct {{ t('common.or') }} deepseek-ai/deepseek-v4.1-flash</li>
               </ol>
             </el-collapse-item>
           </el-collapse>
