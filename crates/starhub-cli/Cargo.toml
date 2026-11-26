@@ -1,0 +1,18 @@
+[package]
+name = "starhub-cli"
+version = "1.0.0"
+edition = "2021"
+authors = ["mkafw <232271157+mkafw@users.noreply.github.com>"]
+description = "StarHub Pure Rust CLI & MCP Server for GitHub Stars asset management and creative inspiration"
+
+[[bin]]
+name = "starhub"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.38", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

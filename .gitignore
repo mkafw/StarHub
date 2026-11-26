@@ -31,3 +31,7 @@ dist-ssr
 # TypeScript
 *.tsbuildinfo
 
+# Rust CLI & MCP companion
+crates/*/target/
+target/
+
